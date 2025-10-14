@@ -1,4 +1,6 @@
 <?php
+ignore_user_abort(true);
+set_time_limit(0);
  $hostname="localhost";
     $database="sysprosfin";
     $username="salasar";
@@ -37,7 +39,7 @@
     $cuentaD=$_POST["cuentaD"] ?? null;
     $nombreD=$_POST["nombreD"] ?? null;
     $apellidoD=$_POST["apellidoD"] ?? null;
-    if($cifrado=="claveCifrado"){
+    if($cifrado=="cifradoClave"){
         switch($codigoLlave){
             case 1:{
                 if(isset($_POST["nombre"])&&isset($_POST["apellido"])&&isset($_POST["dni"])&&isset($_POST["telefono"])&&isset($_POST["correo"])&&isset($_POST["usuario"])&&isset($_POST["clave"])){
@@ -59,14 +61,25 @@
                                     echo json_encode($json);
                                 }
                                 else{
-                                    $telefonofinal="+504".$telefono;
-                                    $consulta="INSERT INTO `perfiles`(`id`, `nombre`, `apellido`, `identidad`, `telefono`, `usuario`, `correo`, `clave`, `fecha_creacion`, `hora_creacion`, `fecha_actividad`, `hora_actividad`, `estado`) VALUES (NULL,'$nombre','$apellido','$identidad','$telefonofinal','$usuario','$correo','$clave','$fecha_creacion','$hora_creacion','$fecha_actividad','$hora_actividad',2)";
+                                    $consulta="SELECT * FROM `perfiles` WHERE (`identidad`='$identidad')";
                                     $resultado=mysqli_query($conexion,$consulta);
-                                    $resultar["mensaje"]="registrado";
-                                    $resultar["correo_origen"]=$correoOrigen;
-                                    $resultar["clave_correo_origen"]=$claveOrigen;
-                                    $json['aprobacion'][]=$resultar;
-                                    echo json_encode($json);
+                                    if($resultado){
+                                        if($resultado->num_rows>0){
+                                            $resultar["mensaje"]="identidad_repetida";
+                                            $json['aprobacion'][]=$resultar;
+                                            echo json_encode($json);
+                                        }
+                                        else{
+                                            $telefonofinal="+504".$telefono;
+                                            $consulta="INSERT INTO `perfiles`(`id`, `nombre`, `apellido`, `identidad`, `telefono`, `usuario`, `correo`, `clave`, `fecha_creacion`, `hora_creacion`, `fecha_actividad`, `hora_actividad`, `estado`) VALUES (NULL,'$nombre','$apellido','$identidad','$telefonofinal','$usuario','$correo','$clave','$fecha_creacion','$hora_creacion','$fecha_actividad','$hora_actividad',2)";
+                                            $resultado=mysqli_query($conexion,$consulta);
+                                            $resultar["mensaje"]="registrado";
+                                            $resultar["correo_origen"]=$correoOrigen;
+                                            $resultar["clave_correo_origen"]=$claveOrigen;
+                                            $json['aprobacion'][]=$resultar;
+                                            echo json_encode($json);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -222,17 +235,28 @@
             }
             case 9:{
                 if(isset($_POST["usuario"])&&isset($_POST["empresa"])&&isset($_POST["usuarioP"])&&isset($_POST["id"])){
-                    $consulta="INSERT INTO `cuentas`(`cuenta`, `perfiles`, `credito`, `congelado`, `deuda`, `intereses`, `porcentaje`, `empresas`, `rangos`, `tipo`, `estado`, `fecha_creacion`) VALUES (NULL,(SELECT `id` FROM `perfiles` WHERE (`usuario`='$usuario')),0.0,0.0,0.0,0.0,0.0,(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),4,2,1,'$fecha_creacion')";
+                    $consulta="SELECT * FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (p.usuario='$usuario' AND e.empresa='$empresa')";
                     $resultado=mysqli_query($conexion,$consulta);
                     if($resultado){
-                        $consulta="UPDATE `empresas` AS s SET s.clientes=s.clientes+1 WHERE (s.empresa='$empresa')";
-                        $resultado=mysqli_query($conexion,$consulta);
-                        if($resultado){
-                            $consulta="DELETE FROM `solicitud` WHERE (`id`='$id')";
-                            $resultado=mysqli_query($conexion,$consulta);
-                            $resultar["mensaje"]="aprobado";
+                        if($resultado->num_rows>0){
+                            $resultar["mensaje"]="negado";
                             $json['aprobacion'][]=$resultar;
                             echo json_encode($json);
+                        }
+                        else{
+                            $consulta="INSERT INTO `cuentas`(`cuenta`, `perfiles`, `credito`, `congelado`, `deuda`, `intereses`, `porcentaje`, `empresas`, `rangos`, `tipo`, `estado`, `fecha_creacion`) VALUES (NULL,(SELECT `id` FROM `perfiles` WHERE (`usuario`='$usuario')),0.0,0.0,0.0,0.0,0.0,(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),4,2,1,'$fecha_creacion')";
+                            $resultado=mysqli_query($conexion,$consulta);
+                            if($resultado){
+                                $consulta="UPDATE `empresas` AS s SET s.clientes=s.clientes+1 WHERE (s.empresa='$empresa')";
+                                $resultado=mysqli_query($conexion,$consulta);
+                                if($resultado){
+                                    $consulta="DELETE FROM `solicitud` WHERE (`id`='$id')";
+                                    $resultado=mysqli_query($conexion,$consulta);
+                                    $resultar["mensaje"]="aprobado";
+                                    $json['aprobacion'][]=$resultar;
+                                    echo json_encode($json);
+                                }
+                            }
                         }
                     }
                 }
@@ -240,7 +264,7 @@
             }
             case 10:{
                 if(isset($_POST["empresa"])){
-                    $consulta="SELECT s.id, p.usuario, p.nombre, p.apellido, p.correo, p.telefono FROM `solicitud` AS s JOIN `perfiles` AS p JOIN `empresas` AS e JOIN `descripcion` AS d ON (s.perfiles=p.id AND s.empresas=e.id AND s.descripcion=d.id) WHERE (e.empresa='$empresa') AND (d.descripcion='agregar')";
+                    $consulta="SELECT s.id, p.usuario, p.nombre, p.apellido, p.correo, p.telefono, p.identidad FROM `solicitud` AS s JOIN `perfiles` AS p JOIN `empresas` AS e JOIN `descripcion` AS d ON (s.perfiles=p.id AND s.empresas=e.id AND s.descripcion=d.id) WHERE (e.empresa='$empresa') AND (d.descripcion='agregar')";
                     $resultado=mysqli_query($conexion,$consulta);
                     if($resultado){
                         if($resultado->num_rows>0){
@@ -252,6 +276,7 @@
                                 $resultar["correo"]=$registro["correo"];
                                 $resultar["usuario"]=$registro["usuario"];
                                 $resultar["telefono"]=$registro["telefono"];
+                                $resultar["identidad"]=$registro["identidad"];
                                 $json['aprobacion'][]=$resultar;
                             }
                             echo json_encode($json);
@@ -932,7 +957,7 @@
             }
             case 30:{
                 if(isset($_POST['cuenta'])){
-                    $consulta="SELECT p.nombre, p.apellido, p.telefono, c.credito, c.deuda, c.intereses, r.rango, c.porcentaje, c.fecha_creacion FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `rangos` AS r ON (c.perfiles=p.id AND c.rangos=r.id) WHERE (c.cuenta='$cuenta')";
+                    $consulta="SELECT p.nombre, p.apellido, p.identidad, p.correo, p.telefono, c.credito, c.deuda, c.intereses, r.rango, c.porcentaje, c.fecha_creacion FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `rangos` AS r ON (c.perfiles=p.id AND c.rangos=r.id) WHERE (c.cuenta='$cuenta')";
                     $resultado=mysqli_query($conexion,$consulta);
                     if($resultado){
                         if($resultado->num_rows>0){
@@ -944,6 +969,8 @@
                                 $resultar["credito"]=$registro["credito"];
                                 $resultar["deuda"]=$registro["deuda"];
                                 $resultar["rango"]=$registro["rango"];
+                                $resultar["correo"]=$registro["correo"];
+                                $resultar["identidad"]=$registro["identidad"];
                                 $resultar["porcentaje"]=$registro["porcentaje"];
                                 $resultar["fechaLimite"]=$registro["fecha_creacion"];
                                 $resultar["telefono"]=$registro["telefono"];
@@ -1651,6 +1678,277 @@
                             $json['aprobacion'][]=$resultar;
                             echo json_encode($json);
                         }
+                    }
+                }
+                break;
+            }
+            case 48:{
+                if(isset($_POST['empresa']) && isset($_POST["fechaI"])){
+                    $consulta="UPDATE `cuentas` AS c JOIN `empresas` AS e ON (c.empresas=e.id) SET c.fecha_creacion='$fechaI' WHERE (e.empresa='$empresa' AND c.rangos!=1 AND c.estado=1)";
+                    $resultado=mysqli_query($conexion,$consulta);
+                    if($resultado){
+                        $resultar["mensaje"]="aprobado";
+                        $json['aprobacion'][]=$resultar;
+                    }
+                    else{
+                        $resultar["mensaje"]="error";
+                        $json['aprobacion'][]=$resultar;
+                    }
+                    echo json_encode($json); 
+                }
+                break;
+            }
+            case 49:{
+                if(isset($_POST['cuenta']) && isset($_POST["empresa"]) &&  isset($_POST["cuentaO"])){
+                    $consulta="SELECT p.nombre, p.apellido, c.credito, c.deuda, c.intereses FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (c.cuenta='$cuenta')";
+                    $resultado=mysqli_query($conexion,$consulta);
+                    if($resultado){
+                        if($resultado->num_rows>0){
+                            if($registro=mysqli_fetch_assoc($resultado)){
+                                $nombreD=$registro["nombre"];
+                                $apellidoD=$registro["apellido"];
+                                $creditoD=(double)$registro["credito"];
+                                $deudaD=(double)$registro["deuda"];
+                                $interesesD=(double)$registro["intereses"];
+                                $consulta="SELECT p.nombre, p.apellido FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (c.cuenta='$cuentaO')";
+                                $resultado=mysqli_query($conexion,$consulta);
+                                if($resultado){
+                                    if($resultado->num_rows>0){
+                                        if($registro=mysqli_fetch_assoc($resultado)){
+                                            $nombreO=$registro["nombre"];
+                                            $apellidoO=$registro["apellido"];
+                                            if($interesesD>0){
+                                                if($creditoD>=$interesesD){
+                                                    $deudaT=$deudaD+$interesesD;
+                                                    $creditoT=$creditoD-$interesesD;
+                                                    $consulta="UPDATE `cuentas`  SET `credito`=$creditoT, `deuda`=$deudaT WHERE (`cuenta`='$cuenta')";
+                                                    $resultado=mysqli_query($conexion,$consulta);
+                                                    if($resultado){
+                                                        $consulta="INSERT INTO `historial` (`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`,`empresasD`,`tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreO') AND (p.apellido='$apellidoO') AND (c.cuenta='$cuentaO')),'$cuentaO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,8,'$interesesD','$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreD') AND (p.apellido='$apellidoD') AND (c.cuenta='$cuenta')),'$cuenta',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,9)";
+                                                        $resultado=mysqli_query($conexion,$consulta);
+                                                        if($resultado){
+                                                            $consulta="UPDATE `cuentas` AS c  SET  c.intereses=c.deuda * c.porcentaje WHERE (`cuenta`='$cuenta')";
+                                                            $resultado=mysqli_query($conexion,$consulta);
+                                                            if($resultado){
+                                                                $consulta="INSERT INTO `historial` (`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`,`empresasD`,`tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreO') AND (p.apellido='$apellidoO') AND (c.cuenta='$cuentaO')),'$cuentaO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,12,(SELECT `intereses` FROM `cuentas` WHERE (`cuenta`='$cuenta')),'$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreD') AND (p.apellido='$apellidoD') AND (c.cuenta='$cuenta')),'$cuenta',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,13)";
+                                                                $resultado=mysqli_query($conexion,$consulta);
+                                                                $resultar["mensaje"]="aprobado";
+                                                                $json['aprobacion'][]=$resultar;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                else{
+                                                    $resultar["mensaje"]="negado";
+                                                    $json['aprobacion'][]=$resultar;
+                                                }
+                                            }
+                                            else{
+                                                if($deudaD>0){
+                                                    $consulta="UPDATE `cuentas` AS c  SET  c.intereses=c.deuda * c.porcentaje WHERE (`cuenta`='$cuenta')";
+                                                    $resultado=mysqli_query($conexion,$consulta);
+                                                    if($resultado){
+                                                        $consulta="INSERT INTO `historial` (`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`,`empresasD`,`tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreO') AND (p.apellido='$apellidoO') AND (c.cuenta='$cuentaO')),'$cuentaO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,12,(SELECT `intereses` FROM `cuentas` WHERE (`cuenta`='$cuenta')),'$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreD') AND (p.apellido='$apellidoD') AND (c.cuenta='$cuenta')),'$cuenta',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,13)";
+                                                        $resultado=mysqli_query($conexion,$consulta);
+                                                        $resultar["mensaje"]="aprobado";
+                                                        $json['aprobacion'][]=$resultar;
+                                                    }
+                                                }
+                                                else{
+                                                    $resultar["mensaje"]="insuficiente";
+                                                    $json['aprobacion'][]=$resultar;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    echo json_encode($json); 
+                }
+                break;
+            }
+            case 50:{
+                if(isset($_POST["empresa"])&&isset($_POST["usuarioP"])){
+                    $consulta="SELECT * FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (e.empresa='$empresa') AND (p.usuario='$usuarioP') AND (c.estado=1)";
+                    $resultado=mysqli_query($conexion,$consulta);
+                    if($resultado){
+                        if($resultado->num_rows>0){
+                            $resultar["mensaje"]="existe";
+                            $json['aprobacion'][]=$resultar;
+                            echo json_encode($json);
+                        }
+                        else{
+                            $consulta="INSERT INTO `cuentas`(`cuenta`, `perfiles`, `credito`, `congelado`, `deuda`, `intereses`, `porcentaje`, `empresas`, `rangos`, `tipo`, `estado`, `fecha_creacion`) VALUES (NULL,(SELECT `id` FROM `perfiles` WHERE (`usuario`='$usuarioP')),0.0,0.0,0.0,0.0,0.0,(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),4,2,1,'$fecha_creacion')";
+                            $resultado=mysqli_query($conexion,$consulta);
+                            if($resultado){
+                                $consulta="UPDATE `empresas` AS s SET s.clientes=s.clientes+1 WHERE (s.empresa='$empresa')";
+                                $resultado=mysqli_query($conexion,$consulta);
+                                if($resultado){
+                                    $resultar["mensaje"]="aprobado";
+                                    $json['aprobacion'][]=$resultar;
+                                    echo json_encode($json);
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+            case 51:{
+                $consulta="SELECT p.nombre, p.apellido, c.cuenta, c.congelado FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (p.usuario='$usuarioP' AND e.empresa='$empresa' AND c.estado=1)";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        if($registro=mysqli_fetch_array($resultado)){
+                            $nombreAO=$registro["nombre"];
+                            $apellidoAO=$registro["apellido"];
+                            $cuentaAO=$registro["cuenta"];
+                            $congelado=$registro["congelado"];
+                            $consulta="SELECT p.nombre, p.apellido, c.cuenta,c.credito FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (c.cuenta='$usuario' AND e.empresa='$empresa' AND c.estado=1)";
+                            $resultado=mysqli_query($conexion,$consulta);
+                            if($resultado){
+                                if($resultado->num_rows>0){
+                                    if($registro=mysqli_fetch_array($resultado)){
+                                        $nombreAD=$registro["nombre"];
+                                        $apellidoAD=$registro["apellido"];
+                                        $cuentaAD=$registro["cuenta"];
+                                        $credito=$registro["credito"];
+                                        if((double)$congelado>=(double)$cantidad){
+                                            if((double)$credito>=(double)$cantidad){
+                                                $consulta="UPDATE `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` e ON (c.perfiles=p.id AND c.empresas=e.id) SET c.congelado=c.congelado - $cantidad WHERE (p.usuario='$usuarioP' AND c.cuenta='$cuentaAO' AND e.empresa='$empresa' AND c.estado=1)";
+                                                $resultado=mysqli_query($conexion,$consulta);
+                                                if($resultado){
+                                                    $consulta="UPDATE `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) SET c.congelado=c.congelado + $cantidad, c.deuda=c.deuda + $cantidad, c.credito=c.credito - $cantidad WHERE (c.cuenta='$usuario' AND c.cuenta='$cuentaAD' AND e.empresa='$empresa' AND c.estado=1)";
+                                                    $resultado=mysqli_query($conexion,$consulta);
+                                                    if($resultado){
+                                                        $consulta="INSERT INTO `historial`(`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`, `empresasD`, `tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreAO' AND p.apellido='$apellidoAO' AND c.cuenta='$cuentaAO')),'$cuentaAO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,5,'$cantidad','$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreAD' AND p.apellido='$apellidoAD' AND c.cuenta='$cuentaAD')),'$cuentaAD',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,2)";
+                                                        $resultado=mysqli_query($conexion,$consulta);
+                                                        if($resultado){
+                                                            $consulta="SELECT h.cuentasD,h.fecha,h.hora,h.referencia,h.cantidad,p.nombre AS nombreD,p.apellido AS apellidoD,d.descripcion AS descripcionD FROM `historial` AS h JOIN `perfiles` AS p JOIN `descripcion` d ON (h.perfilesD=p.id AND h.descripcionD=d.id) WHERE (`fecha`='$fecha_actividad' AND `hora`='$hora_actividad')";
+                                                            $resultado=mysqli_query($conexion,$consulta);
+                                                            if($resultado){
+                                                                if($resultado->num_rows>0){
+                                                                    if($registro=mysqli_fetch_array($resultado)){
+                                                                        $resultar["referencia"]=$registro["referencia"];
+                                                                        $resultar["cantidad"]=$registro["cantidad"];
+                                                                        $resultar["descripcion"]=$registro["descripcionD"];
+                                                                        $resultar["hora"]=$registro["hora"];
+                                                                        $resultar["fecha"]=$registro["fecha"];
+                                                                        $resultar["nombre"]=$registro["nombreD"];
+                                                                        $resultar["apellido"]=$registro["apellidoD"];
+                                                                        $resultar["cuenta"]=$registro["cuentasD"];
+                                                                        $resultar["mensaje"]="aprobado";
+                                                                        $json['aprobacion'][]=$resultar;
+                                                                        echo json_encode($json);
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else{
+                                                $resultar["mensaje"]="insuficiente2";
+                                                $json['aprobacion'][]=$resultar;
+                                                echo json_encode($json);
+                                            }
+                                        }
+                                        else{
+                                            $resultar["mensaje"]="insuficiente";
+                                            $json['aprobacion'][]=$resultar;
+                                            echo json_encode($json);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+            case 52:{
+                $consulta="SELECT p.nombre, p.apellido, c.cuenta FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (p.usuario='$usuarioP' AND e.empresa='$empresa' AND c.estado=1)";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        if($registro=mysqli_fetch_array($resultado)){
+                            $nombreAO=$registro["nombre"];
+                            $apellidoAO=$registro["apellido"];
+                            $cuentaAO=$registro["cuenta"];
+                            $consulta="SELECT p.nombre, p.apellido, c.cuenta,c.credito FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (c.cuenta='$usuario' AND e.empresa='$empresa' AND c.estado=1)";
+                            $resultado=mysqli_query($conexion,$consulta);
+                            if($resultado){
+                                if($resultado->num_rows>0){
+                                    if($registro=mysqli_fetch_array($resultado)){
+                                        $nombreAD=$registro["nombre"];
+                                        $apellidoAD=$registro["apellido"];
+                                        $cuentaAD=$registro["cuenta"];
+                                        $credito=$registro["credito"];
+                                        if((double)$credito>=(double)$cantidad){
+                                            $consulta="UPDATE `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) SET c.deuda=c.deuda + $cantidad, c.credito=c.credito - $cantidad WHERE (c.cuenta='$usuario' AND c.cuenta='$cuentaAD' AND e.empresa='$empresa' AND c.estado=1)";
+                                            $resultado=mysqli_query($conexion,$consulta);
+                                            if($resultado){
+                                                $consulta="INSERT INTO `historial`(`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`, `empresasD`, `tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreAO' AND p.apellido='$apellidoAO' AND c.cuenta='$cuentaAO')),'$cuentaAO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,6,'$cantidad','$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreAD' AND p.apellido='$apellidoAD' AND c.cuenta='$cuentaAD')),'$cuentaAD',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,7)";
+                                                $resultado=mysqli_query($conexion,$consulta);
+                                                if($resultado){
+                                                    $consulta="SELECT h.cuentasD,h.fecha,h.hora,h.referencia,h.cantidad,p.nombre AS nombreD,p.apellido AS apellidoD,d.descripcion AS descripcionD FROM `historial` AS h JOIN `perfiles` AS p JOIN `descripcion` d ON (h.perfilesD=p.id AND h.descripcionD=d.id) WHERE (`fecha`='$fecha_actividad' AND `hora`='$hora_actividad')";
+                                                    $resultado=mysqli_query($conexion,$consulta);
+                                                    if($resultado){
+                                                        if($resultado->num_rows>0){
+                                                            if($registro=mysqli_fetch_array($resultado)){
+                                                                $resultar["referencia"]=$registro["referencia"];
+                                                                $resultar["cantidad"]=$registro["cantidad"];
+                                                                $resultar["descripcion"]=$registro["descripcionD"];
+                                                                $resultar["hora"]=$registro["hora"];
+                                                                $resultar["fecha"]=$registro["fecha"];
+                                                                $resultar["nombre"]=$registro["nombreD"];
+                                                                $resultar["apellido"]=$registro["apellidoD"];
+                                                                $resultar["cuenta"]=$registro["cuentasD"];
+                                                                $resultar["mensaje"]="aprobado";
+                                                                $json['aprobacion'][]=$resultar;
+                                                                echo json_encode($json);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        else{
+                                            $resultar["mensaje"]="insuficiente2";
+                                            $json['aprobacion'][]=$resultar;
+                                            echo json_encode($json);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+            case 53:{
+                if(isset($_POST["empresa"])&&isset($_POST["usuarioP"])){
+                    $consulta="SELECT * FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (p.identidad='$usuarioP')";
+                    $resultado=mysqli_query($conexion,$consulta);
+                    if($resultado){
+                        if($resultado->num_rows>0){
+                            if($registro=mysqli_fetch_array($resultado)){
+                                $resultar["telefono"]=$registro["telefono"];
+                                $resultar["nombre"]=$registro["nombre"];
+                                $resultar["apellido"]=$registro["apellido"];
+                                $resultar["identidad"]=$registro["identidad"];
+                                $resultar["usuario"]=$registro["usuario"];
+                                $resultar["mensaje"]="aprobado";
+                                $json['aprobacion'][]=$resultar;
+                            }
+                        }
+                        else{
+                            $resultar["mensaje"]="no";
+                            $json['aprobacion'][]=$resultar;
+                        }
+                        echo json_encode($json);
                     }
                 }
                 break;
