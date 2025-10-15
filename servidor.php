@@ -1930,7 +1930,7 @@ set_time_limit(0);
             }
             case 53:{
                 if(isset($_POST["empresa"])&&isset($_POST["usuarioP"])){
-                    $consulta="SELECT * FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (p.identidad='$usuarioP')";
+                    $consulta="SELECT * FROM `perfiles` AS p WHERE (p.identidad='$usuarioP')";
                     $resultado=mysqli_query($conexion,$consulta);
                     if($resultado){
                         if($resultado->num_rows>0){
