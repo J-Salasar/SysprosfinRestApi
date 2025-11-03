@@ -1,7 +1,5 @@
 <?php
-ignore_user_abort(true);
-set_time_limit(0);
- $hostname="localhost";
+    $hostname="localhost";
     $database="sysprosfin";
     $username="salasar";
     $password="19R0$@lin@98";
@@ -19,6 +17,7 @@ set_time_limit(0);
     $fecha_actividad=date("Y-m-d");
     $hora_actividad=date("H:i:s");
     $fechaI=$_POST["fechaI"] ?? null;
+    $horaI=$_POST["horaI"] ?? null;
     $fechaF=$_POST["fechaF"] ?? null;
     $correoOrigen="sysprosfin@gmail.com";
     $claveOrigen="degp yqxm ywrn fqbn";
@@ -39,227 +38,275 @@ set_time_limit(0);
     $cuentaD=$_POST["cuentaD"] ?? null;
     $nombreD=$_POST["nombreD"] ?? null;
     $apellidoD=$_POST["apellidoD"] ?? null;
+    $restante=$_POST["restante"] ?? null;
     if($cifrado=="cifradoClave"){
         switch($codigoLlave){
             case 1:{
-                if(isset($_POST["nombre"])&&isset($_POST["apellido"])&&isset($_POST["dni"])&&isset($_POST["telefono"])&&isset($_POST["correo"])&&isset($_POST["usuario"])&&isset($_POST["clave"])){
-                    $consulta="SELECT * FROM `perfiles` WHERE (`correo`='$correo')";
-                    $resultado=mysqli_query($conexion,$consulta);
-                    if($resultado){
-                        if($resultado->num_rows>0){
-                            $resultar["mensaje"]="correo_repetido";
-                            $json['aprobacion'][]=$resultar;
-                            echo json_encode($json);
-                        }
-                        else{
-                            $consulta="SELECT * FROM `perfiles` WHERE (`usuario`='$usuario')";
-                            $resultado=mysqli_query($conexion,$consulta);
-                            if($resultado){
-                                if($resultado->num_rows>0){
-                                    $resultar["mensaje"]="usuario_repetido";
-                                    $json['aprobacion'][]=$resultar;
-                                    echo json_encode($json);
-                                }
-                                else{
-                                    $consulta="SELECT * FROM `perfiles` WHERE (`identidad`='$identidad')";
-                                    $resultado=mysqli_query($conexion,$consulta);
-                                    if($resultado){
-                                        if($resultado->num_rows>0){
-                                            $resultar["mensaje"]="identidad_repetida";
-                                            $json['aprobacion'][]=$resultar;
-                                            echo json_encode($json);
-                                        }
-                                        else{
-                                            $telefonofinal="+504".$telefono;
-                                            $consulta="INSERT INTO `perfiles`(`id`, `nombre`, `apellido`, `identidad`, `telefono`, `usuario`, `correo`, `clave`, `fecha_creacion`, `hora_creacion`, `fecha_actividad`, `hora_actividad`, `estado`) VALUES (NULL,'$nombre','$apellido','$identidad','$telefonofinal','$usuario','$correo','$clave','$fecha_creacion','$hora_creacion','$fecha_actividad','$hora_actividad',2)";
-                                            $resultado=mysqli_query($conexion,$consulta);
-                                            $resultar["mensaje"]="registrado";
-                                            $resultar["correo_origen"]=$correoOrigen;
-                                            $resultar["clave_correo_origen"]=$claveOrigen;
-                                            $json['aprobacion'][]=$resultar;
-                                            echo json_encode($json);
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                $consulta="SELECT * FROM `perfiles` WHERE (`correo`='$correo')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        $resultar["mensaje"]="correo_repetido";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
                     }
-                }
-                break;
-            }
-            case 2:{
-                if((isset($_POST["codigoLlave"])=="2")&&isset($_POST["usuario"])){
-                    $consulta="UPDATE `perfiles` SET `fecha_actividad`='$fecha_actividad', `hora_actividad`='$hora_actividad', `estado`=1 WHERE (`usuario`='$usuario')";
-                    $resultado=mysqli_query($conexion,$consulta);
-                    if($resultado){
-                        $resultar["mensaje"]="validado";
+                    else{
+                        $resultar["mensaje"]="no_correo_repetido";
                         $json['aprobacion'][]=$resultar;
                         echo json_encode($json);
                     }
                 }
+                $conexion->close();
+                break;
+            }
+            case 101:{
+                $consulta="SELECT * FROM `perfiles` WHERE (`usuario`='$usuario')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        $resultar["mensaje"]="usuario_repetido";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
+                    else{
+                        $resultar["mensaje"]="no_usuario_repetido";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
+                }
+                $conexion->close();
+                break;
+            }
+            case 102:{
+                $consulta="SELECT * FROM `perfiles` WHERE (`identidad`='$identidad')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        $resultar["mensaje"]="identidad_repetida";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
+                    else{
+                        $resultar["mensaje"]="no_identidad_repetida";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
+                }
+                $conexion->close();
+                break;
+            }
+            case 103:{
+                $telefonofinal="+504".$telefono;
+                $consulta="INSERT INTO `perfiles`(`id`, `nombre`, `apellido`, `identidad`, `telefono`, `usuario`, `correo`, `clave`, `fecha_creacion`, `hora_creacion`, `fecha_actividad`, `hora_actividad`, `estado`) VALUES (NULL,'$nombre','$apellido','$identidad','$telefonofinal','$usuario','$correo','$clave','$fecha_creacion','$hora_creacion','$fecha_actividad','$hora_actividad',2)";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="registrado";
+                    $resultar["correo_origen"]=$correoOrigen;
+                    $resultar["clave_correo_origen"]=$claveOrigen;
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
+                }
+                $conexion->close();
+                break;
+            }
+            case 2:{
+                $consulta="UPDATE `perfiles` SET `fecha_actividad`='$fecha_actividad', `hora_actividad`='$hora_actividad', `estado`=1 WHERE (`usuario`='$usuario')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="validado";
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
+                }
+                $conexion->close();
                 break;
             }
             case 3:{
-                if(isset($_POST["usuario"])){
-                    $consulta="SELECT p.nombre,p.apellido,p.correo,p.clave,es.estado FROM `perfiles` AS p JOIN `estado` AS es ON (p.estado=es.id) WHERE BINARY p.usuario='$usuario'";
-                    $resultado=mysqli_query($conexion,$consulta);
-                    if($resultado){
-                        if($resultado->num_rows>0){
-                            if($registro=mysqli_fetch_array($resultado)){
-                                $resultar["mensaje"]=$registro["estado"];
-                                $resultar["nombre"]=$registro["nombre"];
-                                $resultar["apellido"]=$registro["apellido"];
-                                $resultar["correo"]=$registro["correo"];
-                                $resultar["clave"]=$registro["clave"];
-                                $resultar["correo_origen"]=$correoOrigen;
-                                $resultar["clave_correo_origen"]=$claveOrigen;
-                                $json['aprobacion'][]=$resultar;
-                                if($registro["estado"]=="1"){
-                                    $consulta="UPDATE `perfiles` SET `fecha_actividad`='$fecha_actividad', `hora_actividad`='$hora_actividad' WHERE (`usuario`='$usuario')";
-                                    $resultado=mysqli_query($conexion,$consulta);
-                                }
-                                echo json_encode($json);
-                            }
-                        }
-                        else{
-                            $resultar["mensaje"]="no existe";
+                $consulta="SELECT p.nombre,p.apellido,p.correo,p.clave,es.estado FROM `perfiles` AS p JOIN `estado` AS es ON (p.estado=es.id) WHERE BINARY p.usuario='$usuario'";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        if($registro=mysqli_fetch_array($resultado)){
+                            $resultar["mensaje"]=$registro["estado"];
+                            $resultar["nombre"]=$registro["nombre"];
+                            $resultar["apellido"]=$registro["apellido"];
+                            $resultar["correo"]=$registro["correo"];
+                            $resultar["clave"]=$registro["clave"];
+                            $resultar["correo_origen"]=$correoOrigen;
+                            $resultar["clave_correo_origen"]=$claveOrigen;
                             $json['aprobacion'][]=$resultar;
                             echo json_encode($json);
                         }
                     }
+                    else{
+                        $resultar["mensaje"]="no existe";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
+                    
                 }
+                $conexion->close();
+                break;
+            }
+            case 301:{
+                $consulta="UPDATE `perfiles` SET `fecha_actividad`='$fecha_actividad', `hora_actividad`='$hora_actividad' WHERE (`usuario`='$usuario')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="fecha_actualizada";
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
+                }
+                $conexion->close();
                 break;
             }
             case 4:{
-                if(isset($_POST["usuario"])){
-                    $consulta="SELECT * FROM `perfiles` WHERE (`usuario`='$usuario')";
-                    $resultado=mysqli_query($conexion,$consulta);
-                    if($resultado){
-                        if($resultado->num_rows>0){
-                            if($registro=mysqli_fetch_array($resultado)){
-                                $resultar["mensaje"]="existe";
-                                $resultar["nombre"]=$registro["nombre"];
-                                $resultar["apellido"]=$registro["apellido"];
-                                $resultar["correo"]=$registro["correo"];
-                                $resultar["correo_origen"]=$correoOrigen;
-                                $resultar["clave_correo_origen"]=$claveOrigen;
-                                $json['aprobacion'][]=$resultar;
-                                echo json_encode($json);
-                            }
-                        }
-                        else{
-                            $resultar["mensaje"]="no existe";
+                $consulta="SELECT * FROM `perfiles` WHERE (`usuario`='$usuario')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        if($registro=mysqli_fetch_array($resultado)){
+                            $resultar["mensaje"]="existe";
+                            $resultar["nombre"]=$registro["nombre"];
+                            $resultar["apellido"]=$registro["apellido"];
+                            $resultar["correo"]=$registro["correo"];
+                            $resultar["correo_origen"]=$correoOrigen;
+                            $resultar["clave_correo_origen"]=$claveOrigen;
                             $json['aprobacion'][]=$resultar;
                             echo json_encode($json);
                         }
                     }
+                    else{
+                        $resultar["mensaje"]="no existe";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
                 }
+                $conexion->close();
                 break;
             }
             case 5:{
-                if(isset($_POST["usuario"])&&isset($_POST["clave"])){
-                    $consulta="UPDATE `perfiles` SET `clave`='$clave',`fecha_actividad`='$fecha_actividad', `hora_actividad`='$hora_actividad' WHERE (`usuario`='$usuario')";
-                    $resultado=mysqli_query($conexion,$consulta);
+                $consulta="UPDATE `perfiles` SET `clave`='$clave',`fecha_actividad`='$fecha_actividad', `hora_actividad`='$hora_actividad' WHERE (`usuario`='$usuario')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
                     $resultar["mensaje"]="guardado";
                     $json['aprobacion'][]=$resultar;
                     echo json_encode($json);
                 }
+                $conexion->close();
                 break;
             }
             case 6:{
-                if(isset($_POST["usuario"])){
-                    $consulta="SELECT c.cuenta, c.credito, c.congelado, c.deuda, c.intereses, c.porcentaje, e.empresa, r.rango, t.tipo, es.estado FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `estado` AS es JOIN `tipo` AS t JOIN `empresas` AS e JOIN `rangos` AS r ON (c.perfiles=p.id) AND (c.estado=es.id) AND (c.empresas=e.id) AND (c.rangos=r.id) AND (c.tipo=t.id) WHERE (p.usuario='$usuario') AND (es.estado='activo')";
-                    $resultado=mysqli_query($conexion,$consulta);
-                    if($resultado){
-                        if($resultado->num_rows>0){
-                            while($registro=mysqli_fetch_assoc($resultado)){
-                                $resultar["mensaje"]="aprobado";
-                                $resultar["cuenta"]=$registro["cuenta"];
-                                $resultar["credito"]=$registro["credito"];
-                                $resultar["congelado"]=$registro["congelado"];
-                                $resultar["deuda"]=$registro["deuda"];
-                                $resultar["empresa"]=$registro["empresa"];
-                                $resultar["tipo"]=$registro["tipo"];
-                                $resultar["rango"]=$registro["rango"];
-                                $resultar["estado"]=$registro["estado"];
-                                $resultar["intereses"]=$registro["intereses"];
-                                $resultar["porcentaje"]=$registro["porcentaje"];
-                                $json['informacionCuentas'][]=$resultar;
-                            }
-                            echo json_encode($json);
-                        }
-                        else{
-                            $resultar["mensaje"]="no existe";
+                $consulta="SELECT c.cuenta, c.credito, c.congelado, c.deuda, c.intereses, c.porcentaje, e.empresa, r.rango, t.tipo, es.estado FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `estado` AS es JOIN `tipo` AS t JOIN `empresas` AS e JOIN `rangos` AS r ON (c.perfiles=p.id) AND (c.estado=es.id) AND (c.empresas=e.id) AND (c.rangos=r.id) AND (c.tipo=t.id) WHERE (p.usuario='$usuario') AND (es.estado='activo')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        while($registro=mysqli_fetch_assoc($resultado)){
+                            $resultar["mensaje"]="aprobado";
+                            $resultar["cuenta"]=$registro["cuenta"];
+                            $resultar["credito"]=$registro["credito"];
+                            $resultar["congelado"]=$registro["congelado"];
+                            $resultar["deuda"]=$registro["deuda"];
+                            $resultar["empresa"]=$registro["empresa"];
+                            $resultar["tipo"]=$registro["tipo"];
+                            $resultar["rango"]=$registro["rango"];
+                            $resultar["estado"]=$registro["estado"];
+                            $resultar["intereses"]=$registro["intereses"];
+                            $resultar["porcentaje"]=$registro["porcentaje"];
                             $json['informacionCuentas'][]=$resultar;
-                            echo json_encode($json);
                         }
+                        echo json_encode($json);
+                    }
+                    else{
+                        $resultar["mensaje"]="no existe";
+                        $json['informacionCuentas'][]=$resultar;
+                        echo json_encode($json);
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 7:{
-                if(isset($_POST["usuario"])){
-                    $consulta="SELECT * FROM `perfiles` WHERE (`usuario`='$usuario')";
-                    $resultado=mysqli_query($conexion,$consulta);
-                    if($resultado){
-                        if($resultado->num_rows>0){
-                            if($registro=mysqli_fetch_array($resultado)){
-                                $resultar["mensaje"]="encontrado";
-                                $resultar["nombre"]=$registro["nombre"];
-                                $resultar["apellido"]=$registro["apellido"];
-                                $resultar["cuenta"]=$registro["id"];
-                                $json['aprobacion'][]=$resultar;
-                                echo json_encode($json);
-                            }
-                        }
-                        else{
-                            $resultar["mensaje"]="no existe";
+                $consulta="SELECT * FROM `perfiles` WHERE (`usuario`='$usuario')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        if($registro=mysqli_fetch_array($resultado)){
+                            $resultar["mensaje"]="encontrado";
+                            $resultar["nombre"]=$registro["nombre"];
+                            $resultar["apellido"]=$registro["apellido"];
+                            $resultar["cuenta"]=$registro["id"];
                             $json['aprobacion'][]=$resultar;
                             echo json_encode($json);
                         }
                     }
+                    else{
+                        $resultar["mensaje"]="no existe";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
                 }
+                $conexion->close();
                 break;
             }
             case 8:{
-                if(isset($_POST["id"])){
-                    $consulta="DELETE FROM `solicitud` WHERE (`id`='$id')";
-                    $resultado=mysqli_query($conexion,$consulta);
-                    if($resultado){
+                $consulta="DELETE FROM `solicitud` WHERE (`id`='$id')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="aprobado";
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
+                }
+                $conexion->close();
+                break;
+            }
+            case 9:{
+                $consulta="SELECT * FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (p.usuario='$usuario' AND e.empresa='$empresa')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        $resultar["mensaje"]="negado";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
+                    else{
                         $resultar["mensaje"]="aprobado";
                         $json['aprobacion'][]=$resultar;
                         echo json_encode($json);
                     }
                 }
+                $conexion->close();
                 break;
             }
-            case 9:{
-                if(isset($_POST["usuario"])&&isset($_POST["empresa"])&&isset($_POST["usuarioP"])&&isset($_POST["id"])){
-                    $consulta="SELECT * FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) WHERE (p.usuario='$usuario' AND e.empresa='$empresa')";
-                    $resultado=mysqli_query($conexion,$consulta);
-                    if($resultado){
-                        if($resultado->num_rows>0){
-                            $resultar["mensaje"]="negado";
-                            $json['aprobacion'][]=$resultar;
-                            echo json_encode($json);
-                        }
-                        else{
-                            $consulta="INSERT INTO `cuentas`(`cuenta`, `perfiles`, `credito`, `congelado`, `deuda`, `intereses`, `porcentaje`, `empresas`, `rangos`, `tipo`, `estado`, `fecha_creacion`) VALUES (NULL,(SELECT `id` FROM `perfiles` WHERE (`usuario`='$usuario')),0.0,0.0,0.0,0.0,0.0,(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),4,2,1,'$fecha_creacion')";
-                            $resultado=mysqli_query($conexion,$consulta);
-                            if($resultado){
-                                $consulta="UPDATE `empresas` AS s SET s.clientes=s.clientes+1 WHERE (s.empresa='$empresa')";
-                                $resultado=mysqli_query($conexion,$consulta);
-                                if($resultado){
-                                    $consulta="DELETE FROM `solicitud` WHERE (`id`='$id')";
-                                    $resultado=mysqli_query($conexion,$consulta);
-                                    $resultar["mensaje"]="aprobado";
-                                    $json['aprobacion'][]=$resultar;
-                                    echo json_encode($json);
-                                }
-                            }
-                        }
-                    }
+            case 901:{
+                $consulta="INSERT INTO `cuentas`(`cuenta`, `perfiles`, `credito`, `congelado`, `deuda`, `intereses`, `porcentaje`, `empresas`, `rangos`, `tipo`, `estado`, `fecha_creacion`) VALUES (NULL,(SELECT `id` FROM `perfiles` WHERE (`usuario`='$usuario')),0.0,0.0,0.0,0.0,0.0,(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),4,2,1,'$fecha_creacion')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="cuenta_creada";
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
                 }
+                $conexion->close();
+                break;
+            }
+            case 902:{
+                $consulta="UPDATE `empresas` AS s SET s.clientes=s.clientes+1 WHERE (s.empresa='$empresa')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="sumado_empresa";
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
+                }
+                $conexion->close();
+                break;
+            }
+            case 903:{
+                $consulta="DELETE FROM `solicitud` WHERE (`id`='$id')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="solicitud_eliminada";
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
+                }
+                $conexion->close();
                 break;
             }
             case 10:{
@@ -288,6 +335,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 11:{
@@ -304,11 +352,12 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 12:{
                 if(isset($_POST["empresa"])){
-                    $consulta="SELECT s.id, p.usuario, p.nombre, p.apellido, p.correo, p.telefono, s.cantidad FROM `solicitud` AS s JOIN `perfiles` AS p JOIN `empresas` AS e JOIN `descripcion` AS d ON (s.perfiles = p.id AND s.empresas=e.id AND s.descripcion=d.id) WHERE (e.empresa = '$empresa' AND d.descripcion = 'prestamo')";
+                    $consulta="SELECT s.id, p.usuario, p.nombre, p.apellido, p.correo, p.telefono, s.cantidad FROM `solicitud` AS s JOIN `perfiles` AS p JOIN `empresas` AS e JOIN `descripcion` AS d ON (s.perfiles = p.id AND s.empresas=e.id AND s.descripcion=d.id) WHERE (e.empresa = '$empresa' AND d.descripcion = 'prestamo' AND s.estado=1)";
                     $resultado=mysqli_query($conexion,$consulta);
                     if($resultado){
                         if($resultado->num_rows>0){
@@ -332,6 +381,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 13:{
@@ -370,6 +420,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 14:{
@@ -396,6 +447,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break; 
             }
             case 15:{
@@ -421,6 +473,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 16:{
@@ -457,6 +510,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 17:{
@@ -469,6 +523,7 @@ set_time_limit(0);
                         echo json_encode($json);
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 18:{
@@ -482,6 +537,7 @@ set_time_limit(0);
                         echo json_encode($json);
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 19:{
@@ -494,6 +550,7 @@ set_time_limit(0);
                         echo json_encode($json);
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 20:{
@@ -525,11 +582,12 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 21:{
                 if(isset($_POST['usuario'])){
-                    $consulta="SELECT e.empresa, e.clientes, (SELECT p.usuario FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.usuario='$usuario') AND (e.id=c.empresas) AND (c.estado=1)) AS agregado, (SELECT p.usuario FROM `solicitud` AS s JOIN `perfiles` AS p ON (s.perfiles=p.id)  WHERE (p.usuario='$usuario') AND (e.id=s.empresas) AND (`descripcion`=1)) AS proceso FROM `empresas` AS e WHERE (e.empresa!='personal') ORDER BY e.clientes DESC LIMIT 10";
+                    $consulta="SELECT e.empresa, e.clientes, (SELECT p.usuario FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.usuario='$usuario') AND (e.id=c.empresas) AND (c.estado=1)) AS agregado, (SELECT p.usuario FROM `solicitud` AS s JOIN `perfiles` AS p ON (s.perfiles=p.id)  WHERE (p.usuario='$usuario') AND (e.id=s.empresas) AND (`descripcion`=1)) AS proceso FROM `empresas` AS e WHERE (e.empresa!='personal' AND e.estado=1) ORDER BY e.clientes DESC LIMIT 10";
                     $resultado=mysqli_query($conexion,$consulta);
                     if($resultado){
                         if($resultado->num_rows>0){
@@ -550,6 +608,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 22:{
@@ -579,6 +638,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 23:{
@@ -594,7 +654,7 @@ set_time_limit(0);
                                     $consulta="UPDATE `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e ON (c.perfiles=p.id AND c.empresas=e.id) SET c.credito=c.credito-$saldo WHERE (p.usuario='$usuario') AND (e.empresa='$empresa') AND (c.cuenta='$cuenta')";
                                     $resultado=mysqli_query($conexion,$consulta);
                                     if($resultado){
-                                        $consulta="INSERT INTO `solicitud`(`id`, `perfiles`, `descripcion`, `cantidad`, `empresas`) VALUES (NULL,(SELECT `id` FROM `perfiles` WHERE (`usuario`='$usuario')),2,'$saldo',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')))";
+                                        $consulta="INSERT INTO `solicitud`(`id`, `perfiles`, `descripcion`, `cantidad`, `empresas`,`estado`) VALUES (NULL,(SELECT `id` FROM `perfiles` WHERE (`usuario`='$usuario')),2,'$saldo',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),1)";
                                         $resultado=mysqli_query($conexion,$consulta);
                                         if($resultado){
                                             $resultar["mensaje"]="aprobado";
@@ -617,6 +677,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 24:{
@@ -733,6 +794,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 25:{
@@ -766,6 +828,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 26:{
@@ -800,6 +863,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 27:{
@@ -830,7 +894,7 @@ set_time_limit(0);
                                                     $consulta="INSERT INTO `historial`(`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`, `empresasD`, `tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreAO' AND p.apellido='$apellidoAO' AND c.cuenta='$cuentaAO')),'$cuentaAO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,5,'$cantidad','$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreAD' AND p.apellido='$apellidoAD' AND c.cuenta='$cuentaAD')),'$cuentaAD',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,2)";
                                                     $resultado=mysqli_query($conexion,$consulta);
                                                     if($resultado){
-                                                        $consulta="DELETE FROM `solicitud` WHERE (`id`='$id')";
+                                                        $consulta="UPDATE `solicitud` SET `estado`=2 WHERE (`id`='$id')";
                                                         $resultado=mysqli_query($conexion,$consulta);
                                                         if($resultado){
                                                             $consulta="SELECT h.cuentasD,h.fecha,h.hora,h.referencia,h.cantidad,p.nombre AS nombreD,p.apellido AS apellidoD,d.descripcion AS descripcionD FROM `historial` AS h JOIN `perfiles` AS p JOIN `descripcion` d ON (h.perfilesD=p.id AND h.descripcionD=d.id) WHERE (`fecha`='$fecha_actividad' AND `hora`='$hora_actividad')";
@@ -868,6 +932,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 28:{
@@ -893,7 +958,7 @@ set_time_limit(0);
                                             $consulta="INSERT INTO `historial`(`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`, `empresasD`, `tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreAO' AND p.apellido='$apellidoAO' AND c.cuenta='$cuentaAO')),'$cuentaAO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,6,'$cantidad','$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreAD' AND p.apellido='$apellidoAD' AND c.cuenta='$cuentaAD')),'$cuentaAD',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,7)";
                                             $resultado=mysqli_query($conexion,$consulta);
                                             if($resultado){
-                                                $consulta="DELETE FROM `solicitudes` WHERE (`id`='$id')";
+                                                $consulta="UPDATE `solicitud` SET `estado`=2 WHERE (`id`='$id')";
                                                 $resultado=mysqli_query($conexion,$consulta);
                                                 if($resultado){
                                                     $consulta="SELECT h.cuentasD,h.fecha,h.hora,h.referencia,h.cantidad,p.nombre AS nombreD,p.apellido AS apellidoD,d.descripcion AS descripcionD FROM `historial` AS h JOIN `perfiles` AS p JOIN `descripcion` d ON (h.perfilesD=p.id AND h.descripcionD=d.id) WHERE (`fecha`='$fecha_actividad' AND `hora`='$hora_actividad')";
@@ -924,6 +989,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 29:{
@@ -953,6 +1019,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 30:{
@@ -980,6 +1047,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 31:{
@@ -1026,6 +1094,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json); 
                 }
+                $conexion->close();
                 break;
             }
             case 32:{
@@ -1073,6 +1142,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json); 
                 }
+                $conexion->close();
                 break;
             }
             case 33:{
@@ -1085,6 +1155,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json); 
                 }
+                $conexion->close();
                 break;
             }
             case 34:{
@@ -1155,6 +1226,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json); 
                 }
+                $conexion->close();
                 break;
             }
             case 35:{
@@ -1223,6 +1295,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json);
                 }
+                $conexion->close();
                 break;
             }
             case 36:{
@@ -1261,6 +1334,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json);
                 }
+                $conexion->close();
                 break;
             }
             case 37:{
@@ -1305,6 +1379,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json);
                 }
+                $conexion->close();
                 break;
             }
             case 38:{
@@ -1341,6 +1416,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 39:{
@@ -1366,6 +1442,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 40:{
@@ -1395,6 +1472,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 41:{
@@ -1430,114 +1508,135 @@ set_time_limit(0);
                         echo json_encode($json);
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 42:{
-                if(isset($_POST["cuenta"]) && isset($_POST["cuentaO"]) && isset($_POST["cantidad"]) && isset($_POST["empresa"])){
-                    $consulta="SELECT p.nombre, p.apellido, c.deuda, c.intereses, c.fecha_creacion FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (c.cuenta='$cuenta')";
-                    $resultado=mysqli_query($conexion,$consulta);
-                    if($resultado){
-                        if($resultado->num_rows>0){
-                            if($registro=mysqli_fetch_array($resultado)){
-                                $nombreD=$registro["nombre"];
-                                $apellidoD=$registro["apellido"];
-                                $deuda=$registro["deuda"];
-                                $intereses=$registro["intereses"];
-                                $fecha_limite=new DateTime($registro["fecha_creacion"]);
-                                $fecha=new DateTime($fecha_actividad);
-                                if($fecha_limite>=$fecha){
-                                    if((double)$intereses>=(double)$cantidad){
-                                        $cantidadR=(double)$cantidad;
-                                        $consulta="UPDATE `cuentas` AS c SET c.intereses=c.intereses-$cantidadR WHERE c.cuenta='$cuenta'";
-                                        $resultado=mysqli_query($conexion,$consulta);
-                                        if($resultado){
-                                            $consulta="SELECT p.nombre, p.apellido FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (c.cuenta='$cuentaO')";
-                                            $resultado=mysqli_query($conexion,$consulta);
-                                            if($resultado){
-                                                if($resultado->num_rows>0){
-                                                    if($registro=mysqli_fetch_array($resultado)){
-                                                        $nombreO=$registro["nombre"];
-                                                        $apellidoO=$registro["apellido"];
-                                                        $consulta="INSERT INTO `historial`(`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`, `empresasD`, `tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreO' AND p.apellido='$apellidoO' AND c.cuenta='$cuentaO'),'$cuentaO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,16,'$cantidad','$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreD' AND p.apellido='$apellidoD' AND c.cuenta='$cuenta')),'$cuenta',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,17)";
-                                                        $resultado=mysqli_query($conexion,$consulta);
-                                                        if($resultado){
-                                                            $consulta="SELECT h.cuentasD,h.fecha,h.hora,h.referencia,h.cantidad,p.nombre AS nombreD,p.apellido AS apellidoD,d.descripcion AS descripcionD,e.empresa AS empresaD FROM `historial` AS h JOIN `perfiles` AS p JOIN `descripcion` d JOIN `empresas` AS e ON (h.perfilesD=p.id AND h.descripcionD=d.id AND h.empresasD=e.id) WHERE (`fecha`='$fecha_actividad' AND `hora`='$hora_actividad')";
-                                                            $resultado=mysqli_query($conexion,$consulta);
-                                                            if($resultado->num_rows>0){
-                                                                if($registro=mysqli_fetch_array($resultado)){
-                                                                    $resultar["mensaje"]="aprobado";
-                                                                    $resultar["nombre"]=$registro["nombreD"];
-                                                                    $resultar["apellido"]=$registro["apellidoD"];
-                                                                    $resultar["referencia"]=$registro["referencia"];
-                                                                    $resultar["descripcion"]=$registro["descripcionD"];
-                                                                    $resultar["cantidad"]=$registro["cantidad"];
-                                                                    $resultar["fecha"]=$registro["fecha"];
-                                                                    $resultar["hora"]=$registro["hora"];
-                                                                    $resultar["empresa"]=$registro["empresaD"];
-                                                                    $resultar["cuenta"]=$registro["cuentasD"];
-                                                                    $json['aprobacion'][]=$resultar;
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    else{
-                                        if(((double)$deuda+(double)$intereses)>=(double)$cantidad){
-                                            $restanteC=(double)$cantidad-(double)$intereses;
-                                            $consulta="UPDATE `cuentas` AS c SET c.credito=c.credito+$restanteC, c.deuda=c.deuda-$restanteC, c.intereses=0 WHERE c.cuenta='$cuenta'";
-                                            $resultado=mysqli_query($conexion,$consulta);
-                                            if($resultado){
-                                                $consulta="SELECT p.nombre, p.apellido FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (c.cuenta='$cuentaO')";
-                                                $resultado=mysqli_query($conexion,$consulta);
-                                                if($resultado){
-                                                    if($resultado->num_rows>0){
-                                                        if($registro=mysqli_fetch_array($resultado)){
-                                                            $nombreO=$registro["nombre"];
-                                                            $apellidoO=$registro["apellido"];
-                                                            $consulta="INSERT INTO `historial`(`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`, `empresasD`, `tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreO' AND p.apellido='$apellidoO' AND c.cuenta='$cuentaO')),'$cuentaO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,16,'$cantidad','$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreD' AND p.apellido='$apellidoD' AND c.cuenta='$cuenta')),'$cuenta',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,17)";
-                                                            $resultado=mysqli_query($conexion,$consulta);
-                                                            if($resultado){
-                                                                $consulta="SELECT h.cuentasD,h.fecha,h.hora,h.referencia,h.cantidad,p.nombre AS nombreD,p.apellido AS apellidoD,d.descripcion AS descripcionD,e.empresa AS empresaD FROM `historial` AS h JOIN `perfiles` AS p JOIN `descripcion` d JOIN `empresas` AS e ON (h.perfilesD=p.id AND h.descripcionD=d.id AND h.empresasD=e.id) WHERE (`fecha`='$fecha_actividad' AND `hora`='$hora_actividad')";
-                                                                $resultado=mysqli_query($conexion,$consulta);
-                                                                if($resultado->num_rows>0){
-                                                                    if($registro=mysqli_fetch_array($resultado)){
-                                                                        $resultar["mensaje"]="aprobado";
-                                                                        $resultar["nombre"]=$registro["nombreD"];
-                                                                        $resultar["apellido"]=$registro["apellidoD"];
-                                                                        $resultar["referencia"]=$registro["referencia"];
-                                                                        $resultar["descripcion"]=$registro["descripcionD"];
-                                                                        $resultar["cantidad"]=$registro["cantidad"];
-                                                                        $resultar["fecha"]=$registro["fecha"];
-                                                                        $resultar["hora"]=$registro["hora"];
-                                                                        $resultar["empresa"]=$registro["empresaD"];
-                                                                        $resultar["cuenta"]=$registro["cuentasD"];
-                                                                        $json['aprobacion'][]=$resultar;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        else{
-                                            $resultar["mensaje"]="saldo_insuficiente";
-                                            $json['aprobacion'][]=$resultar;
-                                        }
-                                    }
+                $consulta="SELECT p.nombre, p.apellido, c.deuda, c.intereses, c.fecha_creacion FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (c.cuenta='$cuenta')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        if($registro=mysqli_fetch_array($resultado)){
+                            $nombreD=$registro["nombre"];
+                            $apellidoD=$registro["apellido"];
+                            $deuda=$registro["deuda"];
+                            $intereses=$registro["intereses"];
+                            $fecha_limite=new DateTime($registro["fecha_creacion"]);
+                            $fecha=new DateTime($fecha_actividad);
+                            if($fecha_limite>=$fecha){
+                                if((double)$intereses>=(double)$cantidad){
+                                    $resultar["mensaje"]="aprobado1";
+                                    $resultar["nombreD"]=$nombreD;
+                                    $resultar["apellidoD"]=$apellidoD;
+                                    $resultar["deuda"]=$deuda;
+                                    $resultar["intereses"]=$intereses;
+                                    $resultar["cantidad"]=$cantidad;
+                                    $json['aprobacion'][]=$resultar;
+                                    echo json_encode($json);
                                 }
                                 else{
-                                    $resultar["mensaje"]="fecha_vencida";
-                                    $json['aprobacion'][]=$resultar;
+                                    if(((double)$deuda+(double)$intereses)>=(double)$cantidad){
+                                        $restanteC=(double)$cantidad-(double)$intereses;
+                                        $resultar["mensaje"]="aprobado2";
+                                        $resultar["nombreD"]=$nombreD;
+                                        $resultar["apellidoD"]=$apellidoD;
+                                        $resultar["deuda"]=$deuda;
+                                        $resultar["intereses"]=$intereses;
+                                        $resultar["cantidad"]=$restanteC;
+                                        $json['aprobacion'][]=$resultar;
+                                        echo json_encode($json);
+                                    }
+                                    else{
+                                        $resultar["mensaje"]="saldo_insuficiente";
+                                        $json['aprobacion'][]=$resultar;
+                                        echo json_encode($json);
+                                    }
                                 }
+                            }
+                            else{
+                                $resultar["mensaje"]="fecha_vencida";
+                                $json['aprobacion'][]=$resultar;
+                                echo json_encode($json);
                             }
                         }
                     }
                     echo json_encode($json);
                 }
+                $conexion->close();
+                break;
+            }
+            case 4201:{
+                $consulta="UPDATE `cuentas` AS c SET c.intereses=c.intereses-$cantidad WHERE c.cuenta='$cuenta'";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="aprobado";
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
+                }
+                $conexion->close();
+                break;
+            }
+            case 4202:{
+                $consulta="UPDATE `cuentas` AS c SET c.credito=c.credito+$cantidad, c.deuda=c.deuda-$restante, c.intereses=0 WHERE c.cuenta='$cuenta'";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="aprobado";
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
+                }
+                $conexion->close();
+                break;
+            }
+            case 4203:{
+                $consulta="SELECT p.nombre, p.apellido FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (c.cuenta='$cuentaO')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        if($registro=mysqli_fetch_array($resultado)){
+                            $resultar["mensaje"]="aprobado";
+                            $resultar["nombreO"]=$registro["nombre"];
+                            $resultar["apellidoO"]=$registro["apellido"];
+                            $json['aprobacion'][]=$resultar;
+                            echo json_encode($json);
+                        }
+                    }
+                }
+                $conexion->close();
+                break;
+            }
+            case 4204:{
+                $consulta="INSERT INTO `historial`(`referencia`, `perfilesO`, `cuentasO`, `empresasO`, `tipoO`, `descripcionO`, `cantidad`, `fecha`, `hora`, `perfilesD`, `cuentasD`, `empresasD`, `tipoD`, `descripcionD`) VALUES (NULL,(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreO' AND p.apellido='$apellidoO' AND c.cuenta='$cuentaO')),'$cuentaO',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,16,'$cantidad','$fecha_actividad','$hora_actividad',(SELECT p.id FROM `cuentas` AS c JOIN `perfiles` AS p ON (c.perfiles=p.id) WHERE (p.nombre='$nombreD' AND p.apellido='$apellidoD' AND c.cuenta='$cuenta')),'$cuenta',(SELECT `id` FROM `empresas` WHERE (`empresa`='$empresa')),2,17)";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    $resultar["mensaje"]="aprobado";
+                    $resultar["fecha"]=$fecha_actividad;
+                    $resultar["hora"]=$hora_actividad;
+                    $json['aprobacion'][]=$resultar;
+                    echo json_encode($json);
+                }
+                $conexion->close();
+                break;
+            }
+            case 4205:{
+                $consulta="SELECT h.cuentasD,h.fecha,h.hora,h.referencia,h.cantidad,p.nombre AS nombreD,p.apellido AS apellidoD,d.descripcion AS descripcionD,e.empresa AS empresaD FROM `historial` AS h JOIN `perfiles` AS p JOIN `descripcion` d JOIN `empresas` AS e ON (h.perfilesD=p.id AND h.descripcionD=d.id AND h.empresasD=e.id) WHERE (`fecha`='$fechaI' AND `hora`='$horaI')";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado->num_rows>0){
+                    if($registro=mysqli_fetch_array($resultado)){
+                        $resultar["mensaje"]="aprobado";
+                        $resultar["nombre"]=$registro["nombreD"];
+                        $resultar["apellido"]=$registro["apellidoD"];
+                        $resultar["referencia"]=$registro["referencia"];
+                        $resultar["descripcion"]=$registro["descripcionD"];
+                        $resultar["cantidad"]=$registro["cantidad"];
+                        $resultar["fecha"]=$registro["fecha"];
+                        $resultar["hora"]=$registro["hora"];
+                        $resultar["empresa"]=$registro["empresaD"];
+                        $resultar["cuenta"]=$registro["cuentasD"];
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
+                }
+                $conexion->close();
                 break;
             }
             case 43:{
@@ -1550,6 +1649,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json); 
                 }
+                $conexion->close();
                 break;
             }
             case 44:{
@@ -1586,6 +1686,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 45:{
@@ -1622,6 +1723,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 46:{
@@ -1651,6 +1753,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 47:{
@@ -1680,6 +1783,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 48:{
@@ -1696,6 +1800,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json); 
                 }
+                $conexion->close();
                 break;
             }
             case 49:{
@@ -1767,6 +1872,7 @@ set_time_limit(0);
                     }
                     echo json_encode($json); 
                 }
+                $conexion->close();
                 break;
             }
             case 50:{
@@ -1794,6 +1900,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 51:{
@@ -1866,6 +1973,7 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 52:{
@@ -1926,11 +2034,12 @@ set_time_limit(0);
                         }
                     }
                 }
+                $conexion->close();
                 break;
             }
             case 53:{
                 if(isset($_POST["empresa"])&&isset($_POST["usuarioP"])){
-                    $consulta="SELECT * FROM `perfiles` AS p WHERE (p.identidad='$usuarioP')";
+                    $consulta="SELECT * FROM `perfiles` AS p  WHERE (p.identidad='$usuarioP')";
                     $resultado=mysqli_query($conexion,$consulta);
                     if($resultado){
                         if($resultado->num_rows>0){
@@ -1951,15 +2060,73 @@ set_time_limit(0);
                         echo json_encode($json);
                     }
                 }
+                $conexion->close();
+                break;
+            }
+            case 54:{
+                $consulta="SELECT p.nombre, p.apellido, c.cuenta, c.credito, c.deuda, c.intereses, r.rango, p.usuario FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `empresas` AS e JOIN `rangos` AS r ON (c.perfiles=p.id AND c.empresas=e.id AND c.rangos=r.id) WHERE p.usuario!='$usuario' AND e.empresa='$empresa' AND c.estado=1 AND (c.deuda<=$cantidad) ORDER BY p.nombre ASC, p.apellido ASC";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        while($registro=mysqli_fetch_assoc($resultado)){
+                            $resultar["mensaje"]="aprobado";
+                            $resultar["intereses"]=$registro["intereses"];
+                            $resultar["nombre"]=$registro["nombre"];
+                            $resultar["apellido"]=$registro["apellido"];
+                            $resultar["cuenta"]=$registro["cuenta"];
+                            $resultar["credito"]=$registro["credito"];
+                            $resultar["capital"]=$registro["deuda"];
+                            $resultar["rango"]=$registro["rango"];
+                            $resultar["usuario"]=$registro["usuario"];
+                            $json['aprobacion'][]=$resultar;
+                        }
+                        echo json_encode($json);
+                    }
+                    else{
+                        $resultar["mensaje"]="no existe";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
+                }
+                $conexion->close();
+                break;
+            }
+            case 55:{
+                $consulta="SELECT p.nombre, p.apellido, c.cuenta, c.credito, c.deuda, c.intereses, r.rango, p.usuario FROM `cuentas` AS c JOIN `perfiles` AS p JOIN `rangos` AS r JOIN `empresas` AS e ON (c.perfiles=p.id AND c.rangos=r.id AND c.empresas=e.id) WHERE (p.usuario!='$usuario' AND e.empresa='$empresa' AND c.estado=1 AND c.rangos!=1) AND (c.deuda<=$cantidad) ORDER BY p.nombre ASC, p.apellido ASC";
+                $resultado=mysqli_query($conexion,$consulta);
+                if($resultado){
+                    if($resultado->num_rows>0){
+                        while($registro=mysqli_fetch_assoc($resultado)){
+                            $resultar["mensaje"]="aprobado";
+                            $resultar["intereses"]=$registro["intereses"];
+                            $resultar["nombre"]=$registro["nombre"];
+                            $resultar["apellido"]=$registro["apellido"];
+                            $resultar["cuenta"]=$registro["cuenta"];
+                            $resultar["credito"]=$registro["credito"];
+                            $resultar["capital"]=$registro["deuda"];
+                            $resultar["rango"]=$registro["rango"];
+                            $resultar["usuario"]=$registro["usuario"];
+                            $json['aprobacion'][]=$resultar;
+                        }
+                        echo json_encode($json);
+                    }
+                    else{
+                        $resultar["mensaje"]="no existe";
+                        $json['aprobacion'][]=$resultar;
+                        echo json_encode($json);
+                    }
+                }
+                $conexion->close();
                 break;
             }
             default:{
+                $conexion->close();
                 header("Location: http://sysprosfin.salasar.xyz");
             }
         }
     }
     else{
+        $conexion->close();
         header("Location: http://sysprosfin.salasar.xyz");
     }
-    mysqli_close($conexion);
 ?>
